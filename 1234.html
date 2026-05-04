@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T50: 1조의 정점</title>
+  <style>
+    :root {
+      --bg0: #0a0a12;
+      --bg1: #12121f;
+      --panel: rgba(20, 22, 38, 0.92);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e8e8f0;
+      --muted: #8888a0;
+      --accent: #7c5cff;
+      --roll-glow: rgba(124, 92, 255, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, #1a1a3a 0%, var(--bg0) 45%);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 12px 14px 28px;
+      position: relative;
+      z-index: 2;
+    }
+
+    h1 {
+      font-size: clamp(1.1rem, 4vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #fff, #b8b0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .top-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .stat label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      word-break: break-all;
+    }
+
+    .display-zone {
+      background: linear-gradient(180deg, rgba(40, 38, 70, 0.5) 0%, var(--panel) 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 16px 32px;
+      margin-bottom: 18px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(124, 92, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .display-zone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(124, 92, 255, 0.15) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
+    .tier-chip {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .result-name {
+      font-size: clamp(1.25rem, 5vw, 1.75rem);
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.3;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+      position: relative;
+      z-index: 1;
+    }
+
+    .result-sub {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    .roll-btn {
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto 16px;
+      display: block;
+      padding: 18px 24px;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-indent: 0.2em;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(145deg, #6b4fe8 0%, #4a2fc9 50%, #3d26a8 100%);
+      box-shadow: 0 8px 32px var(--roll-glow), 0 2px 0 rgba(255, 255, 255, 0.15) inset;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .roll-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-2px);
+    }
+
+    .roll-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .roll-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .btn-secondary {
+      flex: 1 1 140px;
+      padding: 12px 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-reset {
+      display: block;
+      width: 100%;
+      max-width: 280px;
+      margin: 12px auto 0;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 100, 100, 0.35);
+      background: rgba(120, 40, 40, 0.25);
+      color: #e8a0a0;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-reset:hover {
+      background: rgba(160, 50, 50, 0.35);
+      border-color: rgba(255, 130, 130, 0.5);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 160px;
+      justify-content: flex-end;
+    }
+
+    .toggle-row span {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .switch.on {
+      background: rgba(124, 92, 255, 0.45);
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    .switch.on::after {
+      transform: translateX(22px);
+    }
+
+    .inventory-section h2 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .inventory-list {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 8px;
+    }
+
+    .inv-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 0.88rem;
+      border-left: 3px solid #666;
+      cursor: pointer;
+    }
+
+    .inv-item:focus {
+      outline: 1px solid rgba(124, 92, 255, 0.5);
+      outline-offset: 2px;
+    }
+
+    .inv-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .inv-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .inv-tier {
+      font-size: 0.72rem;
+      opacity: 0.85;
+    }
+
+    .inv-count {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    /* Tier colors: gray → green → blue → purple → gold → rainbow */
+    .t-gray {
+      color: #b0b0b8;
+      border-left-color: #888;
+    }
+    .t-green {
+      color: #5ee88a;
+      border-left-color: #2ecc71;
+    }
+    .t-blue {
+      color: #6eb7ff;
+      border-left-color: #3498db;
+    }
+    .t-purple {
+      color: #c792ea;
+      border-left-color: #9b59b6;
+    }
+    .t-gold {
+      color: #ffd56a;
+      border-left-color: #f1c40f;
+      text-shadow: 0 0 12px rgba(241, 196, 15, 0.35);
+    }
+    .t-rainbow {
+      background: linear-gradient(90deg, #ff6b9d, #c471ed, #12c2e9, #ffd56a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: hueShift 3s linear infinite;
+      border-left-color: #fff;
+    }
+
+    @keyframes hueShift {
+      0% {
+        filter: hue-rotate(0deg);
+      }
+      100% {
+        filter: hue-rotate(360deg);
+      }
+    }
+
+    .shake {
+      animation: shake 0.55s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      15% {
+        transform: translateX(-10px) rotate(-0.5deg);
+      }
+      30% {
+        transform: translateX(10px) rotate(0.5deg);
+      }
+      45% {
+        transform: translateX(-8px);
+      }
+      60% {
+        transform: translateX(8px);
+      }
+    }
+
+    #particle-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .passive-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px 10px;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      background: rgba(124, 92, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .passive-strip strong {
+      color: #c4b8ff;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .passive-cap {
+      opacity: 0.85;
+      font-size: 0.72rem;
+    }
+
+    .deck-section {
+      margin-bottom: 16px;
+    }
+
+    .deck-section h2 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .deck-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .btn-deck-fill {
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border-radius: 10px;
+      border: 1px solid rgba(124, 92, 255, 0.45);
+      background: rgba(124, 92, 255, 0.18);
+      color: #d8d0ff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-deck-fill:hover {
+      background: rgba(124, 92, 255, 0.28);
+    }
+
+    .deck-count {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    @media (max-width: 380px) {
+      .deck-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .deck-slot {
+      aspect-ratio: 1;
+      min-height: 52px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .deck-slot.empty {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.65rem;
+    }
+
+    .deck-slot:not(.empty):hover {
+      border-color: rgba(255, 100, 100, 0.5);
+      background: rgba(255, 80, 80, 0.12);
+    }
+
+    @media (min-width: 600px) {
+      .app {
+        padding-top: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <div class="app" id="app-root">
+    <h1>T50 · 1조의 정점</h1>
+
+    <div class="top-bar">
+      <div class="stat">
+        <label>Luck (배수)</label>
+        <div class="value" id="luck-display">1.000</div>
+      </div>
+      <div class="stat">
+        <label>방금 럭↑</label>
+        <div class="value" id="last-gain-display">—</div>
+      </div>
+      <div class="stat">
+        <label>Best Rarity</label>
+        <div class="value" id="best-display">—</div>
+      </div>
+    </div>
+
+    <div class="passive-strip">
+      <span>덱 패시브 에센스</span>
+      <strong id="passive-rate-display">0</strong>
+      <span class="passive-cap">/초 → 럭 즉시 (덱 합산 · 상한 1M)</span>
+    </div>
+
+    <div class="deck-section">
+      <h2>패시브 덱 (최대 15)</h2>
+      <div class="deck-toolbar">
+        <button type="button" class="btn-deck-fill" id="deck-fill-btn">최고 티어로 채우기</button>
+        <span class="deck-count" id="deck-count-label">0 / 15</span>
+      </div>
+      <div class="deck-grid" id="deck-grid"></div>
+      <p style="font-size: 0.72rem; color: var(--muted); margin-top: 8px; line-height: 1.4">
+        슬롯을 누르면 해당 카드가 빠집니다. 인벤 항목을 누르면 덱에 추가됩니다(빈 슬롯·중복 시 무시).
+      </p>
+    </div>
+
+    <button type="button" class="roll-btn" id="roll-btn">ROLL</button>
+
+    <div class="display-zone" id="display-zone">
+      <div class="tier-chip t-gray" id="tier-chip">대기 중</div>
+      <div class="result-name" id="result-name">[ROLL]을 눌러 수집을 시작하세요</div>
+      <div class="result-sub" id="result-sub">확률: 행운 × (1 ÷ 분모)</div>
+    </div>
+
+    <div class="controls">
+      <div class="toggle-row" style="flex: 1 1 100%; justify-content: center">
+        <span>Auto Roll</span>
+        <div class="switch" id="auto-switch" role="switch" aria-checked="false" tabindex="0"></div>
+      </div>
+    </div>
+
+    <div class="inventory-section">
+      <h2>Inventory</h2>
+      <div class="inventory-list" id="inventory-list">
+        <div style="padding: 12px; text-align: center; color: var(--muted); font-size: 0.85rem;">아직 수집한 아이템이 없습니다.</div>
+      </div>
+    </div>
+
+    <p class="footer-note">롤 에센스는 극소량이며, 덱에 올린 티어만 패시브 에센스가 적용됩니다(합 최대 초당 1M). 진행 상황은 이 브라우저에 저장됩니다.</p>
+    <button type="button" class="btn-reset" id="reset-btn">전체 리셋</button>
+  </div>
+
+  <script>
+(function () {
+  "use strict";
+
+  var TIER_COUNT = 50;
+  /** T1 분모=2, T50 분모=1e12 — 지수 보간 */
+  function denomForTier(t) {
+    if (t < 1) t = 1;
+    if (t > TIER_COUNT) t = TIER_COUNT;
+    var i = t - 1;
+    return 2 * Math.pow(1e12 / 2, i / (TIER_COUNT - 1));
+  }
+
+  var JACKPOT_DENOM = 1e8;
+  /** 롤에서 분모에 곱해 럭으로 직행 — 패시브 대비 매우 작게 */
+  var ROLL_LUCK_MULT = 2e-8;
+  /** 초당 에센스(즉시 럭 합산) 합계 상한 */
+  var PASSIVE_ESSENCE_CAP_PER_SEC = 1000000;
+  var DECK_MAX = 15;
+  /** 보유 티어 T 종류마다 초당 에센스 (개수·중복은 무관, 1열 = 1스트림) */
+  function passiveEssenceRateForTier(t) {
+    return 34 * Math.pow(1.057, t - 1);
+  }
+
+  var PASSIVE_TICK_MS = 120;
+  var passiveSaveAccumSec = 0;
+
+  var ADJ = [
+    ["낡은", "깨진", "잊힌", "희미한", "무명의"],
+    ["빛나는", "운명의", "수호하는", "축복받은", "깨어난"],
+    ["울부짖는", "심연의", "고대의", "별을 새긴", "끝없는"],
+    ["시공의", "차원을 가른", "영겁의", "창세의", "절대의"],
+    ["창조를 거스른", "우주를 삼킨", "시간을 부수는", "영원을 관통한", "무(無)에 닿은"],
+  ];
+
+  var NOUN = [
+    ["돌멩이", "나뭇가지", "부적", "구슬", "낡은 검"],
+    ["수정", "방패", "지팡이", "반지", "깃털"],
+    ["창", "낫", "왕관", "오브", "문양"],
+    ["령검", "성유물", "태양석", "달의 심장", "차원문"],
+    ["은하검", "천상의 뿔", "세계수의 씨앗", "허무의 눈", "정점의 조각"],
+  ];
+
+  function gradeIndex(tier) {
+    if (tier <= 10) return 0;
+    if (tier <= 20) return 1;
+    if (tier <= 30) return 2;
+    if (tier <= 40) return 3;
+    return 4;
+  }
+
+  function randomItemName(tier) {
+    var g = gradeIndex(tier);
+    var a = ADJ[g][Math.floor(Math.random() * ADJ[g].length)];
+    var n = NOUN[g][Math.floor(Math.random() * NOUN[g].length)];
+    return a + " " + n;
+  }
+
+  function tierStyleClass(tier) {
+    if (tier >= 50) return "t-rainbow";
+    if (tier >= 40) return "t-gold";
+    if (tier >= 30) return "t-purple";
+    if (tier >= 20) return "t-blue";
+    if (tier >= 10) return "t-green";
+    return "t-gray";
+  }
+
+  /**
+   * 희귀도 순차 검사: T50 → T1, 성공 시 해당 티어
+   * 각 단계 성공 확률 = min(1, luck / denom[tier])
+   */
+  function rollTier(luck) {
+    for (var t = TIER_COUNT; t >= 1; t--) {
+      var d = denomForTier(t);
+      var p = Math.min(1, luck / d);
+      if (Math.random() < p) return t;
+    }
+    return 1;
+  }
+
+  var state = {
+    luck: 1,
+    lastLuckGain: 0,
+    bestTier: 0,
+    inventory: {},
+    deck: [],
+    autoRoll: false,
+  };
+
+  var STORAGE_KEY = "t50_zenith_v1";
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (typeof o.luck === "number" && o.luck > 0) state.luck = o.luck;
+      if (typeof o.essence === "number" && o.essence > 0) state.luck += o.essence;
+      if (typeof o.bestTier === "number") state.bestTier = o.bestTier;
+      if (o.inventory && typeof o.inventory === "object") state.inventory = o.inventory;
+      if (Array.isArray(o.deck)) state.deck = o.deck;
+      if (typeof o.autoRoll === "boolean") state.autoRoll = o.autoRoll;
+    } catch (e) {}
+    sanitizeDeck();
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          luck: state.luck,
+          bestTier: state.bestTier,
+          inventory: state.inventory,
+          deck: state.deck,
+          autoRoll: state.autoRoll,
+        })
+      );
+    } catch (e) {}
+  }
+
+  var rollBtn = document.getElementById("roll-btn");
+  var autoSwitch = document.getElementById("auto-switch");
+  var displayZone = document.getElementById("display-zone");
+  var tierChip = document.getElementById("tier-chip");
+  var resultName = document.getElementById("result-name");
+  var resultSub = document.getElementById("result-sub");
+  var luckDisplay = document.getElementById("luck-display");
+  var lastGainDisplay = document.getElementById("last-gain-display");
+  var passiveRateDisplay = document.getElementById("passive-rate-display");
+  var bestDisplay = document.getElementById("best-display");
+  var inventoryList = document.getElementById("inventory-list");
+  var deckGrid = document.getElementById("deck-grid");
+  var deckCountLabel = document.getElementById("deck-count-label");
+  var particleCanvas = document.getElementById("particle-canvas");
+  var appRoot = document.getElementById("app-root");
+
+  var autoInterval = null;
+  var passiveInterval = null;
+
+  function sanitizeDeck() {
+    var inv = state.inventory;
+    var next = [];
+    var seen = {};
+    for (var i = 0; i < state.deck.length && next.length < DECK_MAX; i++) {
+      var t = state.deck[i];
+      if (typeof t !== "number" || t < 1 || t > TIER_COUNT) continue;
+      if (seen[t]) continue;
+      if (!inv[t] || inv[t].count <= 0) continue;
+      seen[t] = true;
+      next.push(t);
+    }
+    state.deck = next;
+  }
+
+  /** 덱에 넣은 티어만 초당 에센스 합산 (즉시 럭) */
+  function computePassiveEssencePerSec() {
+    var total = 0;
+    var seen = {};
+    for (var i = 0; i < state.deck.length; i++) {
+      var tier = state.deck[i];
+      if (seen[tier]) continue;
+      seen[tier] = true;
+      var data = state.inventory[tier];
+      if (!data || data.count <= 0) continue;
+      total += passiveEssenceRateForTier(tier);
+    }
+    return Math.min(PASSIVE_ESSENCE_CAP_PER_SEC, total);
+  }
+
+  function fillDeckWithHighest() {
+    sanitizeDeck();
+    var owned = Object.keys(state.inventory)
+      .map(function (k) {
+        return parseInt(k, 10);
+      })
+      .filter(function (t) {
+        return (
+          !isNaN(t) && state.inventory[t] && state.inventory[t].count > 0
+        );
+      })
+      .sort(function (a, b) {
+        return b - a;
+      });
+    state.deck = owned.slice(0, DECK_MAX);
+    save();
+    updateUI();
+  }
+
+  function addTierToDeck(tier) {
+    sanitizeDeck();
+    if (state.deck.length >= DECK_MAX) return;
+    if (state.deck.indexOf(tier) !== -1) return;
+    if (!state.inventory[tier] || state.inventory[tier].count <= 0) return;
+    state.deck.push(tier);
+    save();
+    updateUI();
+  }
+
+  function removeDeckSlot(index) {
+    if (index < 0 || index >= state.deck.length) return;
+    state.deck.splice(index, 1);
+    save();
+    updateUI();
+  }
+
+  function renderDeck() {
+    sanitizeDeck();
+    var html = "";
+    for (var s = 0; s < DECK_MAX; s++) {
+      var t = state.deck[s];
+      if (t == null || t === undefined) {
+        html +=
+          '<div class="deck-slot empty" data-deck-slot="' +
+          s +
+          '" title="빈 슬롯"><span>—</span></div>';
+      } else {
+        html +=
+          '<div class="deck-slot ' +
+          tierStyleClass(t) +
+          '" data-deck-slot="' +
+          s +
+          '" data-tier="' +
+          t +
+          '" title="클릭 시 덱에서 제거"><span>T' +
+          t +
+          "</span></div>";
+      }
+    }
+    deckGrid.innerHTML = html;
+    deckCountLabel.textContent = state.deck.length + " / " + DECK_MAX;
+  }
+
+  function formatNum(n) {
+    if (n >= 1e12) return n.toExponential(2);
+    if (n >= 1e9) return (n / 1e9).toFixed(3) + "B";
+    if (n >= 1e6) return (n / 1e6).toFixed(3) + "M";
+    if (n >= 1e3) return (n / 1e3).toFixed(2) + "K";
+    return n.toFixed(n % 1 === 0 ? 0 : 2);
+  }
+
+  /** 이번 롤 럭 증가량 등 작은 수 표시 */
+  function formatLuckGain(n) {
+    if (!n || n <= 0) return "—";
+    if (n < 0.01) return n.toExponential(2);
+    if (n < 1) return n.toFixed(4);
+    return formatNum(n);
+  }
+
+  function resetDisplayZone() {
+    tierChip.textContent = "대기 중";
+    tierChip.className = "tier-chip t-gray";
+    resultName.className = "result-name";
+    resultName.textContent = "[ROLL]을 눌러 수집을 시작하세요";
+    resultSub.textContent = "확률: 행운 × (1 ÷ 분모)";
+  }
+
+  function resetAll() {
+    if (
+      !confirm(
+        "진행 데이터(럭, 인벤토리, 덱, 최고 기록, 자동 롤 설정)를 모두 삭제하고 처음부터 시작할까요?\n이 작업은 되돌릴 수 없습니다."
+      )
+    ) {
+      return;
+    }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    state.luck = 1;
+    state.lastLuckGain = 0;
+    state.bestTier = 0;
+    state.inventory = {};
+    state.deck = [];
+    state.autoRoll = false;
+    if (autoInterval) {
+      clearInterval(autoInterval);
+      autoInterval = null;
+    }
+    autoSwitch.classList.remove("on");
+    autoSwitch.setAttribute("aria-checked", "false");
+    save();
+    resetDisplayZone();
+    updateUI();
+  }
+
+  function updateUI() {
+    luckDisplay.textContent = formatNum(state.luck);
+    lastGainDisplay.textContent = formatLuckGain(state.lastLuckGain);
+    passiveRateDisplay.textContent = formatNum(computePassiveEssencePerSec());
+    if (state.bestTier <= 0) bestDisplay.textContent = "—";
+    else bestDisplay.textContent = "T" + state.bestTier;
+
+    var entries = Object.keys(state.inventory)
+      .map(function (k) {
+        return { tier: parseInt(k, 10), data: state.inventory[k] };
+      })
+      .filter(function (e) {
+        return e.data && e.data.count > 0;
+      })
+      .sort(function (a, b) {
+        return b.tier - a.tier;
+      });
+
+    if (entries.length === 0) {
+      inventoryList.innerHTML =
+        '<div style="padding: 12px; text-align: center; color: var(--muted); font-size: 0.85rem;">아직 수집한 아이템이 없습니다.</div>';
+    } else {
+      inventoryList.innerHTML = entries
+        .map(function (e) {
+          var cls = tierStyleClass(e.tier);
+          var line =
+            '<div class="inv-item ' +
+            cls +
+            '" data-tier="' +
+            e.tier +
+            '" tabindex="0" role="button" title="클릭하여 덱에 추가"><div class="inv-meta"><span class="inv-tier">T' +
+            e.tier +
+            " · 1 / " +
+            formatNum(denomForTier(e.tier)) +
+            '</span><span>' +
+            escapeHtml(e.data.name) +
+            '</span></div><span class="inv-count">×' +
+            e.data.count +
+            "</span></div>";
+          return line;
+        })
+        .join("");
+    }
+    renderDeck();
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function fireJackpotFx() {
+    appRoot.classList.add("shake");
+    setTimeout(function () {
+      appRoot.classList.remove("shake");
+    }, 600);
+    burstParticles();
+  }
+
+  function resizeCanvas() {
+    particleCanvas.width = window.innerWidth;
+    particleCanvas.height = window.innerHeight;
+  }
+
+  function burstParticles() {
+    var ctx = particleCanvas.getContext("2d");
+    if (!ctx) return;
+    resizeCanvas();
+    var parts = [];
+    var n = 120;
+    var cx = window.innerWidth / 2;
+    var cy = window.innerHeight / 2;
+    for (var i = 0; i < n; i++) {
+      var ang = Math.random() * Math.PI * 2;
+      var sp = 2 + Math.random() * 6;
+      parts.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp,
+        life: 40 + Math.random() * 30,
+        hue: Math.floor(Math.random() * 360),
+        size: 2 + Math.random() * 4,
+      });
+    }
+    var start = performance.now();
+    function frame(now) {
+      var elapsed = now - start;
+      ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+      for (var j = 0; j < parts.length; j++) {
+        var p = parts[j];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.12;
+        p.life -= 1;
+        if (p.life <= 0) continue;
+        ctx.fillStyle = "hsla(" + p.hue + ",90%,60%," + p.life / 60 + ")";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      parts = parts.filter(function (q) {
+        return q.life > 0;
+      });
+      if (parts.length && elapsed < 2500) requestAnimationFrame(frame);
+      else ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function performRoll() {
+    var tier = rollTier(state.luck);
+    var d = denomForTier(tier);
+    var name = randomItemName(tier);
+
+    var rawEssence = d * ROLL_LUCK_MULT;
+    state.luck += rawEssence;
+    state.lastLuckGain = rawEssence;
+    if (tier > state.bestTier) state.bestTier = tier;
+
+    if (!state.inventory[tier]) state.inventory[tier] = { name: name, count: 0 };
+    state.inventory[tier].count += 1;
+    if (state.inventory[tier].count === 1) state.inventory[tier].name = name;
+
+    tierChip.textContent = "T" + tier + " · 약 1 / " + formatNum(d);
+    tierChip.className = "tier-chip " + tierStyleClass(tier);
+    resultName.className = "result-name " + tierStyleClass(tier);
+    resultName.textContent = name;
+    resultSub.textContent =
+      "희귀 순차 롤 · 분모 " +
+      formatNum(d) +
+      " · 롤 에센스 " +
+      formatLuckGain(rawEssence) +
+      " → 럭 (패시브 별도)";
+
+    if (d >= JACKPOT_DENOM) fireJackpotFx();
+
+    save();
+    updateUI();
+  }
+
+  rollBtn.addEventListener("click", performRoll);
+
+  function setAuto(on) {
+    state.autoRoll = on;
+    autoSwitch.classList.toggle("on", on);
+    autoSwitch.setAttribute("aria-checked", on ? "true" : "false");
+    if (autoInterval) {
+      clearInterval(autoInterval);
+      autoInterval = null;
+    }
+    if (on) {
+      autoInterval = setInterval(function () {
+        performRoll();
+      }, 450);
+    }
+    save();
+  }
+
+  autoSwitch.addEventListener("click", function () {
+    setAuto(!state.autoRoll);
+  });
+
+  autoSwitch.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setAuto(!state.autoRoll);
+    }
+  });
+
+  window.addEventListener("resize", resizeCanvas);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") save();
+  });
+
+  document.getElementById("reset-btn").addEventListener("click", resetAll);
+
+  document.getElementById("deck-fill-btn").addEventListener("click", fillDeckWithHighest);
+
+  deckGrid.addEventListener("click", function (ev) {
+    var slot = ev.target.closest(".deck-slot");
+    if (!slot || !deckGrid.contains(slot)) return;
+    if (slot.classList.contains("empty")) return;
+    var idx = parseInt(slot.getAttribute("data-deck-slot"), 10);
+    if (isNaN(idx)) return;
+    removeDeckSlot(idx);
+  });
+
+  inventoryList.addEventListener("click", function (ev) {
+    var row = ev.target.closest(".inv-item");
+    if (!row || !inventoryList.contains(row)) return;
+    var t = parseInt(row.getAttribute("data-tier"), 10);
+    if (isNaN(t)) return;
+    addTierToDeck(t);
+  });
+
+  inventoryList.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    var row = ev.target.closest(".inv-item");
+    if (!row || !inventoryList.contains(row)) return;
+    ev.preventDefault();
+    var t = parseInt(row.getAttribute("data-tier"), 10);
+    if (isNaN(t)) return;
+    addTierToDeck(t);
+  });
+
+  function passiveTick() {
+    var rate = computePassiveEssencePerSec();
+    var dt = PASSIVE_TICK_MS / 1000;
+    if (rate > 0) {
+      state.luck += rate * dt;
+      luckDisplay.textContent = formatNum(state.luck);
+      passiveSaveAccumSec += dt;
+      if (passiveSaveAccumSec >= 1) {
+        passiveSaveAccumSec = 0;
+        save();
+      }
+    }
+  }
+
+  if (passiveInterval) clearInterval(passiveInterval);
+  passiveInterval = setInterval(passiveTick, PASSIVE_TICK_MS);
+
+  load();
+  setAuto(state.autoRoll);
+  updateUI();
+})();
+  </script>
+</body>
+</html>
